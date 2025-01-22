@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+    <html>
+        <head>
+            <title>current date in words</title>
+            </head>
+            <body>
+            <h1>Today's date</h1>
+            <p id="dateInWords"></p>
+            <script>
+            const days=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+            const month=["january","february","march","april","may","june","july","august","septmeber","novemeber","decemeber"];
+            const now=new date();
+            constdayname=days[now.getday()];
+            constmonthname=months[now.getmonth()];
+            constyear=now.getfullyear();
+            constdate=now.getdate();
+            constdatestring= dayname,monthname,year,date`;
+            document.getElementById("dateInWords").innertext=datestring;
+            </script>
+            </body>
+            </html>

@@ -38,15 +38,21 @@ Coded by www.creative-tim.com
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
 import Tables from "layouts/tables";
-import Billing from "layouts/billing";
+import ReportingAndAnalytics from "components/Account-companies/pages/ReportingAndAnalytics";
 import RTL from "layouts/rtl";
-import Notifications from "layouts/notifications";
-import Profile from "layouts/profile";
-import SignIn from "layouts/authentication/sign-in";
-import SignUp from "layouts/authentication/sign-up";
-
-// @mui icons
+import Socialmedia from "components/Account-companies/pages/Socialmedia";
+import AccountManagementModule from "components/Account-companies/pages/Contacts";
+import LeadManagement from "components/Account-companies/pages/LeadManagement";
+import QuoteProposalManagement from "components/Account-companies/pages/QuoteProposal";
+import OpportunityModule from "components/OpportunityModule/OpportunityModule";
+import TaskActivityModule from "components/Task/TaskActivityModule";
+import DocumentManagement from "components/Account-companies/pages/DocumentManagement";
+import SalesCRMPage from "components/Accounts/AccountAndCompanyModule";
 import Icon from "@mui/material/Icon";
+import SalesPipelineModule from "components/Account-companies/pages/SalesPipeline";
+import EmailAndCommunicationModule from "components/Account-companies/pages/Emailcommunication";
+import Integrations from "components/Account-companies/pages/Integrations";
+import CustomerJourneyMapping from "components/Account-companies/pages/CustomerJourney";
 
 const routes = [
   {
@@ -57,24 +63,24 @@ const routes = [
     route: "/dashboard",
     component: <Dashboard />,
   },
+  // {
+  //   type: "collapse",
+  //   name: "Leads Management",
+  //   key: "tables",
+  //   icon: <Icon fontSize="small">table_view</Icon>,
+  //   route: "/tables",
+  //   component: <LeadManagement />,
+  // },
   {
     type: "collapse",
-    name: "Tables",
-    key: "tables",
-    icon: <Icon fontSize="small">table_view</Icon>,
-    route: "/tables",
-    component: <Tables />,
-  },
-  {
-    type: "collapse",
-    name: "Billing",
+    name: "Opportunities",
     key: "billing",
     icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/billing",
-    component: <Billing />,
+    route: "/Opportunities",
+    component: <OpportunityModule />,
   },
   {
-    type: "collapse",
+    type: "Contacts",
     name: "RTL",
     key: "rtl",
     icon: <Icon fontSize="small">format_textdirection_r_to_l</Icon>,
@@ -82,36 +88,100 @@ const routes = [
     component: <RTL />,
   },
   {
-    type: "collapse",
-    name: "Notifications",
+    type: "collapse1",
+    name: "Tasks & Activities",
     key: "notifications",
     icon: <Icon fontSize="small">notifications</Icon>,
     route: "/notifications",
-    component: <Notifications />,
+    component: <TaskActivityModule />,
   },
   {
     type: "collapse",
-    name: "Profile",
+    name: "Accounts/Companies",
     key: "profile",
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
-    component: <Profile />,
+    component: <SalesCRMPage />,
   },
   {
     type: "collapse",
-    name: "Sign In",
-    key: "sign-in",
+    name: "Contacts",
+    key: "Contacts",
     icon: <Icon fontSize="small">login</Icon>,
-    route: "/authentication/sign-in",
-    component: <SignIn />,
+    route: "/Contacts",
+    component: <AccountManagementModule />,
   },
   {
     type: "collapse",
-    name: "Sign Up",
-    key: "sign-up",
+    name: "Lead Management",
+    key: "Lead-Management",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/leadManagement",
+    component: <LeadManagement />,
+  },
+  {
+    type: "collapse",
+    name: "SalesPipeline",
+    key: "SalesPipeline",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/SalesPipeline",
+    component: <SalesPipelineModule />,
+  },
+  {
+    type: "collapse",
+    name: "Email Communication",
+    key: "Email-Communication",
     icon: <Icon fontSize="small">assignment</Icon>,
     route: "/authentication/sign-up",
-    component: <SignUp />,
+    component: <EmailAndCommunicationModule />,
+  },
+  {
+    type: "collapse",
+    name: "Report",
+    key: "Report",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/report",
+    component: <ReportingAndAnalytics />,
+  },
+  {
+    type: "collapse",
+    name: "Quote Preposal",
+    key: "sign-up",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/QuoteProposalManagement",
+    component: <QuoteProposalManagement />,
+  },
+  {
+    type: "collapse",
+    name: "Document Management",
+    key: "DocumentManagement",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/DocumentManagement",
+    component: <DocumentManagement />,
+  },
+  {
+    type: "collapse",
+    name: "Integrations",
+    key: "Integrations",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/Integrations",
+    component: <Integrations />,
+  },
+  {
+    type: "collapse",
+    name: "Customer journey",
+    key: "Customerjourney",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/Customerjourney",
+    component: <CustomerJourneyMapping />,
+  },
+  {
+    type: "collapse",
+    name: "Socialmedia Integration",
+    key: "Socialmedia",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/Socialmedia",
+    component: <Socialmedia />,
   },
 ];
 

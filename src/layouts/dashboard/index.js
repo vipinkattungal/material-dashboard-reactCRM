@@ -49,7 +49,7 @@ function Dashboard() {
                 color="dark"
                 icon="weekend"
                 title="Bookings"
-                count={281}
+                count={28}
                 percentage={{
                   color: "success",
                   amount: "+55%",
@@ -63,7 +63,7 @@ function Dashboard() {
               <ComplexStatisticsCard
                 icon="leaderboard"
                 title="Today's Users"
-                count="2,300"
+                count="23"
                 percentage={{
                   color: "success",
                   amount: "+3%",
