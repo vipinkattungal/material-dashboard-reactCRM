@@ -53,6 +53,8 @@ import SalesPipelineModule from "components/Account-companies/pages/SalesPipelin
 import EmailAndCommunicationModule from "components/Account-companies/pages/Emailcommunication";
 import Integrations from "components/Account-companies/pages/Integrations";
 import CustomerJourneyMapping from "components/Account-companies/pages/CustomerJourney";
+import Referral from "components/Account-companies/pages/ReferalManagement";
+import PrescriptionRenewal from "components/Account-companies/pages/PrescriptionRenewal";
 
 const routes = [
   {
@@ -182,6 +184,22 @@ const routes = [
     icon: <Icon fontSize="small">assignment</Icon>,
     route: "/Socialmedia",
     component: <Socialmedia />,
+  },
+  {
+    type: "collapse",
+    name: "Referral management",
+    key: "Referral",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/Referral",
+    component: <Referral />,
+  },
+  {
+    type: "collapse",
+    name: "PrescriptionRenewal management",
+    key: "PrescriptionRenewal",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/PrescriptionRenewal",
+    component: <PrescriptionRenewal />,
   },
 ];
 
