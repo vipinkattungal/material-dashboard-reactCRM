@@ -286,7 +286,7 @@ function Configurator() {
         </MDBox>
         <Divider />
         <MDBox mt={3} mb={2}>
-          <MDButton
+          {/* <MDButton
             component={Link}
             href="https://www.creative-tim.com/learning-lab/react/quick-start/material-dashboard/"
             target="_blank"
@@ -296,7 +296,7 @@ function Configurator() {
             fullWidth
           >
             view documentation
-          </MDButton>
+          </MDButton> */}
         </MDBox>
         <MDBox display="flex" justifyContent="center">
           <GitHubButton
@@ -309,7 +309,7 @@ function Configurator() {
             Star
           </GitHubButton>
         </MDBox>
-        <MDBox mt={2} textAlign="center">
+        {/* <MDBox mt={2} textAlign="center">
           <MDBox mb={0.5}>
             <MDTypography variant="h6">Thank you for sharing!</MDTypography>
           </MDBox>
@@ -338,7 +338,7 @@ function Configurator() {
               &nbsp; Share
             </MDButton>
           </MDBox>
-        </MDBox>
+        </MDBox> */}
       </MDBox>
     </ConfiguratorRoot>
   );

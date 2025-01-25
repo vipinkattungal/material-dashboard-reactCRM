@@ -55,7 +55,7 @@ import Integrations from "components/Account-companies/pages/Integrations";
 import CustomerJourneyMapping from "components/Account-companies/pages/CustomerJourney";
 import Referral from "components/Account-companies/pages/ReferalManagement";
 import PrescriptionRenewal from "components/Account-companies/pages/PrescriptionRenewal";
-
+import WebsiteUpdateModule from "components/Account-companies/pages/UpdateWebsite";
 const routes = [
   {
     type: "collapse",
@@ -200,6 +200,14 @@ const routes = [
     icon: <Icon fontSize="small">assignment</Icon>,
     route: "/PrescriptionRenewal",
     component: <PrescriptionRenewal />,
+  },
+  {
+    type: "collapse",
+    name: "UPDATE Website",
+    key: "WebsiteUpdateModule",
+    icon: <Icon fontSize="small">assignment</Icon>,
+    route: "/WebsiteUpdateModule",
+    component: <WebsiteUpdateModule />,
   },
 ];
 
