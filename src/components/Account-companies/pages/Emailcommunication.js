@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Box,
   Card,
+  CardContent,
   Typography,
   Button,
   TextField,
@@ -15,269 +16,344 @@ import {
   DialogActions,
   Grid,
   IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
+  Tabs,
+  Tab,
+  useTheme,
 } from "@mui/material";
-import { AddCircle, MailOutline } from "@mui/icons-material";
-
-// Dummy client data for demonstration
-const clients = [
-  { id: 1, name: "John Doe", email: "johndoe@example.com" },
-  { id: 2, name: "Jane Smith", email: "janesmith@example.com" },
-  { id: 3, name: "Michael Johnson", email: "michaelj@example.com" },
-];
-
-// Dummy email templates and follow-ups for demonstration
-const initialFollowUps = [
-  {
-    id: 1,
-    client: "John Doe",
-    subject: "Follow-Up on Your Inquiry",
-    body: "This is a follow-up email to check in on your inquiry.",
-  },
-  {
-    id: 2,
-    client: "Jane Smith",
-    subject: "Reminder: Your Consultation Appointment",
-    body: "Just a friendly reminder about your upcoming consultation.",
-  },
-  {
-    id: 3,
-    client: "Michael Johnson",
-    subject: "Your Requested Information",
-    body: "Here is the information you requested about our services.",
-  },
-];
+import {
+  AddCircle,
+  Close,
+  Search,
+  InsertDriveFile,
+  Schedule,
+  Email, // Replaced Template with Email
+  Delete,
+  ContentCopy,
+  TextFields,
+} from "@mui/icons-material";
+import { Editor } from "@tinymce/tinymce-react";
 
 const EmailAndCommunicationModule = () => {
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailBody, setEmailBody] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [selectedClient, setSelectedClient] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
+  const theme = useTheme();
   const [openDialog, setOpenDialog] = useState(false);
   const [openTemplateDialog, setOpenTemplateDialog] = useState(false);
-  const [openFollowUpDialog, setOpenFollowUpDialog] = useState(false);
-  const [emailTemplates, setEmailTemplates] = useState([]);
-  const [emailFollowUps, setEmailFollowUps] = useState(initialFollowUps);
-  const [filter, setFilter] = useState("");
-  const [viewEmail, setViewEmail] = useState(null);
+  const [emailTemplates, setEmailTemplates] = useState([
+    {
+      id: 1,
+      name: "Welcome Email",
+      subject: "Welcome to Our Service!",
+      body: "<p>Dear {name},</p><p>Welcome to our platform!</p>",
+      category: "Onboarding",
+      variables: ["name", "email"],
+      lastUsed: "2023-10-15",
+    },
+  ]);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [newTemplate, setNewTemplate] = useState({
+    name: "",
+    subject: "",
+    body: "",
+    category: "",
+    variables: [],
+  });
 
-  // Function to handle sending email (Dummy implementation)
-  const handleSendEmail = () => {
-    alert(`Email sent to: ${clientEmail}`);
-    setOpenDialog(false);
+  const editorConfig = {
+    height: 300,
+    menubar: false,
+    plugins: [
+      "advlist autolink lists link image charmap print preview anchor",
+      "searchreplace visualblocks code fullscreen",
+      "insertdatetime media table paste code help wordcount",
+    ],
+    toolbar:
+      "undo redo | formatselect | bold italic | \
+      alignleft aligncenter alignright | \
+      bullist numlist outdent indent | help",
+    apiKey: "your-tinymce-api-key", // Replace with your TinyMCE API key
   };
 
-  // Function to handle adding or editing an email template
-  const handleSaveTemplate = () => {
-    const newTemplate = {
-      id: emailTemplates.length + 1,
-      name: emailSubject,
-      subject: emailSubject,
-      body: emailBody,
-    };
-    setEmailTemplates([...emailTemplates, newTemplate]);
-    setOpenTemplateDialog(false);
-  };
+  const templateCategories = [
+    { name: "Onboarding", color: theme.palette.primary.main },
+    { name: "Follow-Up", color: theme.palette.success.main },
+    { name: "Promotional", color: theme.palette.warning.main },
+    { name: "Transactional", color: theme.palette.error.main },
+  ];
 
-  // Function to handle adding a follow-up email
-  const handleAddFollowUp = () => {
-    const newFollowUp = {
-      id: emailFollowUps.length + 1,
-      client: selectedClient,
-      subject: emailSubject,
-      body: emailBody,
-    };
-    setEmailFollowUps([...emailFollowUps, newFollowUp]);
-    setOpenFollowUpDialog(false);
-  };
-
-  // Handle view email content
-  const handleViewEmail = (email) => {
-    setViewEmail(email);
-  };
-
-  // Filtered email follow-ups based on the search term
-  const filteredFollowUps = emailFollowUps.filter(
-    (email) =>
-      email.client.toLowerCase().includes(filter.toLowerCase()) ||
-      email.subject.toLowerCase().includes(filter.toLowerCase())
+  const TemplateGallery = () => (
+    <Grid container spacing={2} sx={{ mt: 2 }}>
+      {emailTemplates.map((template) => (
+        <Grid item xs={12} md={4} key={template.id}>
+          <Card
+            sx={{
+              borderLeft: `4px solid ${
+                templateCategories.find((c) => c.name === template.category)?.color
+              }`,
+              cursor: "pointer",
+              "&:hover": { boxShadow: theme.shadows[3] },
+            }}
+            onClick={() => setSelectedTemplate(template)}
+          >
+            <CardContent>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="subtitle1">{template.name}</Typography>
+                <Chip
+                  label={template.category}
+                  size="small"
+                  sx={{
+                    backgroundColor:
+                      templateCategories.find((c) => c.name === template.category)?.color + "20",
+                    color: templateCategories.find((c) => c.name === template.category)?.color,
+                  }}
+                />
+              </Box>
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                {template.subject}
+              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Chip
+                  icon={<TextFields />}
+                  label={`${template.variables.length} Variables`}
+                  size="small"
+                />
+                <Typography variant="caption" color="textSecondary">
+                  Last used: {template.lastUsed}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
   );
 
-  return (
-    <Box sx={{ p: 3, marginLeft: "280px" }}>
-      {/* Header Section */}
-      <Typography variant="h4" sx={{ fontWeight: "bold", color: "#333", mb: 3 }}>
-        Email & Communication Tools
-      </Typography>
+  const TemplatePreview = () => (
+    <Card sx={{ mt: 2 }}>
+      <CardContent>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Typography variant="h6">{selectedTemplate.name}</Typography>
+          <Box>
+            <IconButton onClick={() => navigator.clipboard.writeText(selectedTemplate.body)}>
+              <ContentCopy />
+            </IconButton>
+            <IconButton
+              onClick={() =>
+                setEmailTemplates(emailTemplates.filter((t) => t.id !== selectedTemplate.id))
+              }
+            >
+              <Delete color="error" />
+            </IconButton>
+          </Box>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Subject:
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {selectedTemplate.subject}
+        </Typography>
 
-      {/* Email Campaigns Section */}
-      <Card sx={{ mb: 3, borderRadius: "12px", boxShadow: 3, p: 2 }}>
-        <Typography variant="h5" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-          Create New Email Campaign
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Variables:
+        </Typography>
+        <Box sx={{ mb: 2 }}>
+          {selectedTemplate.variables.map((variable, index) => (
+            <Chip
+              key={index}
+              label={`{${variable}}`}
+              size="small"
+              sx={{ mr: 1, backgroundColor: theme.palette.info.light }}
+            />
+          ))}
+        </Box>
+
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Preview:
+        </Typography>
+        <div dangerouslySetInnerHTML={{ __html: selectedTemplate.body }} />
+      </CardContent>
+    </Card>
+  );
+
+  const handleCreateTemplate = () => {
+    const template = {
+      id: emailTemplates.length + 1,
+      ...newTemplate,
+      lastUsed: new Date().toISOString().split("T")[0],
+    };
+    setEmailTemplates([...emailTemplates, template]);
+    setOpenTemplateDialog(false);
+    setNewTemplate({
+      name: "",
+      subject: "",
+      body: "",
+      category: "",
+      variables: [],
+    });
+  };
+
+  return (
+    <Box sx={{ p: 3, backgroundColor: "#f8f9fa", marginLeft: "280px" }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          Email Communications
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddCircle />}
           onClick={() => setOpenDialog(true)}
-          sx={{
-            backgroundColor: "#28a745",
-            color: "#fff",
-            "&:hover": { backgroundColor: "#218838" },
-            borderRadius: "8px",
-            padding: "8px 16px",
-            fontSize: "16px",
-          }}
+          sx={{ backgroundColor: theme.palette.success.main }}
         >
           New Campaign
         </Button>
-      </Card>
+      </Box>
 
-      {/* Templates and Automated Follow-Ups Section */}
-      <Card sx={{ mb: 3, borderRadius: "12px", boxShadow: 3, p: 2 }}>
-        <Typography variant="h5" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-          Follow-Ups and Templates
-        </Typography>
+      <Tabs value={selectedTab} onChange={(e, newVal) => setSelectedTab(newVal)} sx={{ mb: 3 }}>
+        <Tab label="Email Templates" icon={<Email />} /> {/* Replaced Template with Email */}
+        <Tab label="Scheduled Emails" icon={<Schedule />} />
+        <Tab label="Email Analytics" icon={<InsertDriveFile />} />
+      </Tabs>
 
-        {/* Follow-Up Table */}
-        <TextField
-          label="Search Follow-Ups"
-          variant="outlined"
-          fullWidth
-          sx={{ mb: 2 }}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          InputProps={{
-            sx: { borderRadius: "8px" },
-          }}
-        />
+      {selectedTab === 0 && (
+        <Card sx={{ p: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+            <Typography variant="h5">Email Templates</Typography>
+            <Button
+              variant="outlined"
+              startIcon={<AddCircle />}
+              onClick={() => setOpenTemplateDialog(true)}
+            >
+              New Template
+            </Button>
+          </Box>
 
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="follow-up table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Client</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredFollowUps.map((email) => (
-                <TableRow key={email.id}>
-                  <TableCell>{email.client}</TableCell>
-                  <TableCell>{email.subject}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleViewEmail(email)}
-                      sx={{ color: "#1976d2", borderColor: "#1976d2" }}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      {/* View Follow-Up Email Content */}
-      {viewEmail && (
-        <Card sx={{ mb: 3, borderRadius: "12px", boxShadow: 3, p: 2 }}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
-            View Email: {viewEmail.subject}
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            <strong>Client:</strong> {viewEmail.client}
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            <strong>Content:</strong> {viewEmail.body}
-          </Typography>
+          {selectedTemplate ? (
+            <TemplatePreview />
+          ) : (
+            <>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Search templates..."
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: <Search sx={{ mr: 1 }} />,
+                }}
+              />
+              <TemplateGallery />
+            </>
+          )}
         </Card>
       )}
 
-      {/* Email Creation Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
-        <DialogTitle sx={{ fontWeight: "bold", color: "#1976d2" }}>
-          Create New Email Campaign
+      <Dialog
+        open={openTemplateDialog}
+        fullWidth
+        maxWidth="md"
+        onClose={() => setOpenTemplateDialog(false)}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+          Create New Email Template
+          <IconButton onClick={() => setOpenTemplateDialog(false)}>
+            <Close />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
-          {/* Client Selection */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select Client</InputLabel>
-            <Select
-              value={selectedClient}
-              onChange={(e) => {
-                const client = clients.find((c) => c.id === e.target.value);
-                setSelectedClient(client.id);
-                setClientEmail(client.email); // Set the client email
-              }}
-              label="Select Client"
-              sx={{
-                borderRadius: "8px",
-                boxShadow: "none",
-                "&:focus": {
-                  borderColor: "#1976d2",
-                },
-              }}
-            >
-              {clients.map((client) => (
-                <MenuItem key={client.id} value={client.id}>
-                  {client.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Email Subject */}
-          <TextField
-            fullWidth
-            label="Email Subject"
-            variant="outlined"
-            sx={{ mb: 2 }}
-            value={emailSubject}
-            onChange={(e) => setEmailSubject(e.target.value)}
-            InputProps={{
-              sx: { borderRadius: "8px" },
-            }}
-          />
-
-          {/* Email Body */}
-          <TextField
-            fullWidth
-            label="Email Body"
-            variant="outlined"
-            multiline
-            rows={4}
-            sx={{ mb: 2 }}
-            value={emailBody}
-            onChange={(e) => setEmailBody(e.target.value)}
-            InputProps={{
-              sx: { borderRadius: "8px" },
-            }}
-          />
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  label="Category"
+                  value={newTemplate.category}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
+                >
+                  {templateCategories.map((category) => (
+                    <MenuItem key={category.name} value={category.name}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Template Name"
+                sx={{ mb: 2 }}
+                value={newTemplate.name}
+                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                label="Email Subject"
+                sx={{ mb: 2 }}
+                value={newTemplate.subject}
+                onChange={(e) => setNewTemplate({ ...newTemplate, subject: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                label="Variables (comma separated)"
+                placeholder="name,email,company"
+                sx={{ mb: 2 }}
+                value={newTemplate.variables.join(",")}
+                onChange={(e) =>
+                  setNewTemplate({
+                    ...newTemplate,
+                    variables: e.target.value.split(",").map((v) => v.trim()),
+                  })
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Email Body:
+              </Typography>
+              <Editor
+                init={editorConfig}
+                value={newTemplate.body}
+                onEditorChange={(content) => setNewTemplate({ ...newTemplate, body: content })}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setOpenDialog(false)}
-            color="secondary"
-            sx={{ borderRadius: "8px" }}
-          >
-            Cancel
+          <Button variant="contained" color="primary" onClick={handleCreateTemplate}>
+            Save Template
           </Button>
-          <Button
-            onClick={handleSendEmail}
-            sx={{ backgroundColor: "#28a745", color: "#fff", borderRadius: "8px" }}
-          >
-            Send Email
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDialog} fullWidth maxWidth="md" onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Compose New Email</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={3}>
+              <List>
+                <ListItem button>
+                  <ListItemText primary="Select Template" />
+                </ListItem>
+                <ListItem button>
+                  <ListItemText primary="Add Variables" />
+                </ListItem>
+                <ListItem button>
+                  <ListItemText primary="Attachments" />
+                </ListItem>
+              </List>
+            </Grid>
+            <Grid item xs={12} md={9}>
+              <TextField fullWidth label="Subject" sx={{ mb: 2 }} />
+              <Editor init={editorConfig} initialValue="<p>Compose your email here...</p>" />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined">Schedule</Button>
+          <Button variant="contained" color="primary">
+            Send Now
           </Button>
         </DialogActions>
       </Dialog>
