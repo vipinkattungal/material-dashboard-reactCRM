@@ -6,20 +6,32 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Dialog,
   DialogActions,
   DialogTitle,
   DialogContent,
   IconButton,
+  useMediaQuery,
+  useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { FaEdit, FaTrash } from "react-icons/fa"; // Importing FontAwesome Icons
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+  GridToolbarExport,
+} from "@mui/x-data-grid";
+import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import PropTypes from "prop-types"; // Add this at the top
+import { Chip } from "@mui/material";
 
 const SalesCRMPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   // Account Module States
   const [accounts, setAccounts] = useState([
     {
@@ -32,15 +44,6 @@ const SalesCRMPage = () => {
       status: "Active",
     },
   ]);
-  const [newAccount, setNewAccount] = useState({
-    name: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    industry: "",
-    status: "Active",
-  });
-  const [openAccountDialog, setOpenAccountDialog] = useState(false);
 
   // Company Module States
   const [companies, setCompanies] = useState([
@@ -54,47 +57,125 @@ const SalesCRMPage = () => {
       status: "Active",
     },
   ]);
-  const [newCompany, setNewCompany] = useState({
-    name: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    industry: "",
-    status: "Active",
-  });
-  const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
 
-  // Handle Account Add
-  const handleAddAccount = () => {
-    setAccounts([...accounts, { id: accounts.length + 1, ...newAccount }]);
-    setNewAccount({
-      name: "",
-      contactPerson: "",
-      email: "",
-      phone: "",
-      industry: "",
-      status: "Active",
-    });
-    setOpenAccountDialog(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentEntity, setCurrentEntity] = useState({});
+  const [dialogType, setDialogType] = useState("");
+
+  // Table Columns Configuration
+  const accountColumns = [
+    { field: "name", headerName: "Account Name", flex: 1 },
+    { field: "contactPerson", headerName: "Contact Person", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "phone", headerName: "Phone", flex: 1 },
+    {
+      field: "industry",
+      headerName: "Industry",
+      flex: 1,
+      renderCell: (params) => <Chip label={params.value} color="primary" variant="outlined" />,
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            color:
+              params.value === "Active" ? theme.palette.success.main : theme.palette.error.main,
+            fontWeight: "bold",
+          }}
+        >
+          {params.value}
+        </Box>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      renderCell: (params) => (
+        <Box>
+          <IconButton onClick={() => handleEdit(params.row, "Account")} color="primary">
+            <FaEdit />
+          </IconButton>
+          <IconButton onClick={() => handleDelete(params.row.id, "Account")} color="error">
+            <FaTrash />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
+  const companyColumns = [
+    { field: "name", headerName: "Company Name", flex: 1 },
+    { field: "contactPerson", headerName: "Contact Person", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "phone", headerName: "Phone", flex: 1 },
+    {
+      field: "industry",
+      headerName: "Industry",
+      flex: 1,
+      renderCell: (params) => <Chip label={params.value} color="secondary" variant="outlined" />,
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            color:
+              params.value === "Active" ? theme.palette.success.main : theme.palette.error.main,
+            fontWeight: "bold",
+          }}
+        >
+          {params.value}
+        </Box>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      renderCell: (params) => (
+        <Box>
+          <IconButton onClick={() => handleEdit(params.row, "Company")} color="primary">
+            <FaEdit />
+          </IconButton>
+          <IconButton onClick={() => handleDelete(params.row.id, "Company")} color="error">
+            <FaTrash />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
+  // Custom Toolbar
+  function CustomToolbar({ onAddClick }) {
+    return (
+      <GridToolbarContainer>
+        <Button
+          startIcon={<FaPlus />}
+          onClick={onAddClick}
+          sx={{ color: theme.palette.primary.main }}
+        >
+          Add New
+        </Button>
+        <GridToolbarFilterButton />
+        <GridToolbarExport />
+      </GridToolbarContainer>
+    );
+  }
+  CustomToolbar.propTypes = {
+    onAddClick: PropTypes.func.isRequired,
   };
 
-  // Handle Company Add
-  const handleAddCompany = () => {
-    setCompanies([...companies, { id: companies.length + 1, ...newCompany }]);
-    setNewCompany({
-      name: "",
-      contactPerson: "",
-      email: "",
-      phone: "",
-      industry: "",
-      status: "Active",
-    });
-    setOpenCompanyDialog(false);
-  };
-
-  // Handle Edit and Delete
-  const handleEdit = (id, type) => {
-    console.log(`Edit ${type} with ID: ${id}`);
+  // Handlers
+  const handleEdit = (entity, type) => {
+    setCurrentEntity(entity);
+    setDialogType(type);
+    setOpenDialog(true);
   };
 
   const handleDelete = (id, type) => {
@@ -107,177 +188,150 @@ const SalesCRMPage = () => {
     }
   };
 
+  const handleSave = () => {
+    if (dialogType === "Account") {
+      setAccounts(accounts.map((acc) => (acc.id === currentEntity.id ? currentEntity : acc)));
+    } else {
+      setCompanies(companies.map((comp) => (comp.id === currentEntity.id ? currentEntity : comp)));
+    }
+    setOpenDialog(false);
+  };
+
   return (
-    <Box sx={{ p: 3, marginLeft: "280px" }}>
-      {/* Account Section */}
-      <Card sx={{ mb: 3 }}>
+    <Box
+      sx={{
+        p: isMobile ? 1 : 3,
+        marginLeft: { xs: 0, md: "280px" },
+        transition: theme.transitions.create("margin", {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.leavingScreen,
+        }),
+      }}
+    >
+      {/* Accounts Table */}
+      <Card sx={{ mb: 3, boxShadow: theme.shadows[3] }}>
         <CardContent>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Accounts
+          <Typography variant="h5" gutterBottom>
+            Accounts Management
           </Typography>
-          <Button
-            variant="contained"
-            onClick={() => setOpenAccountDialog(true)}
-            sx={{
-              mb: 2,
-              backgroundColor: "#28a745",
-              color: "#fff", // Ensure the text color is white
-              "&:hover": {
-                backgroundColor: "#218838",
-              },
-            }}
-          >
-            Add Account
-          </Button>
-
-          <Grid container spacing={2}>
-            {accounts.map((account) => (
-              <Grid item xs={12} sm={6} md={4} key={account.id}>
-                <Card sx={{ p: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                    {account.name}
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Contact Person:{" "}
-                    <span style={{ fontWeight: "normal" }}>{account.contactPerson}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Email: <span style={{ fontWeight: "normal" }}>{account.email}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Phone: <span style={{ fontWeight: "normal" }}>{account.phone}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Industry: <span style={{ fontWeight: "normal" }}>{account.industry}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Status: <span style={{ fontWeight: "normal" }}>{account.status}</span>
-                  </Typography>
-
-                  <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
-                    <IconButton
-                      onClick={() => handleEdit(account.id, "Account")}
-                      sx={{ color: "#28a745" }}
-                    >
-                      <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(account.id, "Account")}
-                      sx={{ color: "#d9534f" }}
-                    >
-                      <FaTrash />
-                    </IconButton>
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <Box sx={{ height: 400, width: "100%" }}>
+            <DataGrid
+              rows={accounts}
+              columns={accountColumns}
+              pageSize={5}
+              rowsPerPageOptions={[5, 10, 25]}
+              components={{
+                Toolbar: () => (
+                  <CustomToolbar
+                    onAddClick={() => {
+                      setDialogType("Account");
+                      setCurrentEntity({
+                        id: accounts.length + 1,
+                        name: "",
+                        contactPerson: "",
+                        email: "",
+                        phone: "",
+                        industry: "",
+                        status: "Active",
+                      });
+                      setOpenDialog(true);
+                    }}
+                  />
+                ),
+              }}
+              sx={{
+                border: "none",
+                "& .MuiDataGrid-cell:hover": {
+                  color: theme.palette.primary.main,
+                },
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Company Section */}
-      <Card>
+      {/* Companies Table */}
+      <Card sx={{ boxShadow: theme.shadows[3] }}>
         <CardContent>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Companies
+          <Typography variant="h5" gutterBottom>
+            Companies Management
           </Typography>
-          <Button
-            variant="contained"
-            onClick={() => setOpenCompanyDialog(true)}
-            sx={{
-              mb: 2,
-              backgroundColor: "#28a745",
-              color: "#fff", // Ensure the text color is white
-              "&:hover": {
-                backgroundColor: "#218838",
-              },
-            }}
-          >
-            Add Company
-          </Button>
-
-          <Grid container spacing={2}>
-            {companies.map((company) => (
-              <Grid item xs={12} sm={6} md={4} key={company.id}>
-                <Card sx={{ p: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                    {company.name}
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Contact Person:{" "}
-                    <span style={{ fontWeight: "normal" }}>{company.contactPerson}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Email: <span style={{ fontWeight: "normal" }}>{company.email}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Phone: <span style={{ fontWeight: "normal" }}>{company.phone}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Industry: <span style={{ fontWeight: "normal" }}>{company.industry}</span>
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    Status: <span style={{ fontWeight: "normal" }}>{company.status}</span>
-                  </Typography>
-
-                  <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
-                    <IconButton
-                      onClick={() => handleEdit(company.id, "Company")}
-                      sx={{ color: "#28a745" }}
-                    >
-                      <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(company.id, "Company")}
-                      sx={{ color: "#d9534f" }}
-                    >
-                      <FaTrash />
-                    </IconButton>
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <Box sx={{ height: 400, width: "100%" }}>
+            <DataGrid
+              rows={companies}
+              columns={companyColumns}
+              pageSize={5}
+              rowsPerPageOptions={[5, 10, 25]}
+              components={{
+                Toolbar: () => (
+                  <CustomToolbar
+                    onAddClick={() => {
+                      setDialogType("Company");
+                      setCurrentEntity({
+                        id: companies.length + 1,
+                        name: "",
+                        contactPerson: "",
+                        email: "",
+                        phone: "",
+                        industry: "",
+                        status: "Active",
+                      });
+                      setOpenDialog(true);
+                    }}
+                  />
+                ),
+              }}
+              sx={{
+                border: "none",
+                "& .MuiDataGrid-cell:hover": {
+                  color: theme.palette.primary.main,
+                },
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Add Account Dialog */}
-      <Dialog open={openAccountDialog} onClose={() => setOpenAccountDialog(false)}>
-        <DialogTitle>Add New Account</DialogTitle>
+      {/* Universal Edit/Add Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullScreen={isMobile}>
+        <DialogTitle>
+          {currentEntity.id ? `Edit ${dialogType}` : `Add New ${dialogType}`}
+        </DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             margin="normal"
-            label="Account Name"
-            value={newAccount.name}
-            onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+            label={`${dialogType} Name`}
+            value={currentEntity.name || ""}
+            onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Contact Person"
-            value={newAccount.contactPerson}
-            onChange={(e) => setNewAccount({ ...newAccount, contactPerson: e.target.value })}
+            value={currentEntity.contactPerson || ""}
+            onChange={(e) => setCurrentEntity({ ...currentEntity, contactPerson: e.target.value })}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Email"
-            value={newAccount.email}
-            onChange={(e) => setNewAccount({ ...newAccount, email: e.target.value })}
+            type="email"
+            value={currentEntity.email || ""}
+            onChange={(e) => setCurrentEntity({ ...currentEntity, email: e.target.value })}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Phone"
-            value={newAccount.phone}
-            onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
+            value={currentEntity.phone || ""}
+            onChange={(e) => setCurrentEntity({ ...currentEntity, phone: e.target.value })}
           />
           <FormControl fullWidth margin="normal">
             <InputLabel>Industry</InputLabel>
             <Select
-              value={newAccount.industry}
-              onChange={(e) => setNewAccount({ ...newAccount, industry: e.target.value })}
+              value={currentEntity.industry || ""}
+              onChange={(e) => setCurrentEntity({ ...currentEntity, industry: e.target.value })}
             >
               <MenuItem value="Technology">Technology</MenuItem>
               <MenuItem value="Healthcare">Healthcare</MenuItem>
@@ -288,8 +342,8 @@ const SalesCRMPage = () => {
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
             <Select
-              value={newAccount.status}
-              onChange={(e) => setNewAccount({ ...newAccount, status: e.target.value })}
+              value={currentEntity.status || "Active"}
+              onChange={(e) => setCurrentEntity({ ...currentEntity, status: e.target.value })}
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
@@ -297,92 +351,19 @@ const SalesCRMPage = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAccountDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
           <Button
             variant="contained"
-            onClick={handleAddAccount}
+            onClick={handleSave}
             sx={{
-              backgroundColor: "#28a745",
-              color: "#fff",
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.common.white,
               "&:hover": {
-                backgroundColor: "#218838",
+                backgroundColor: theme.palette.primary.dark,
               },
             }}
           >
-            Add Account
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add Company Dialog */}
-      <Dialog open={openCompanyDialog} onClose={() => setOpenCompanyDialog(false)}>
-        <DialogTitle>Add New Company</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Company Name"
-            value={newCompany.name}
-            onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Contact Person"
-            value={newCompany.contactPerson}
-            onChange={(e) => setNewCompany({ ...newCompany, contactPerson: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Email"
-            value={newCompany.email}
-            onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Phone"
-            value={newCompany.phone}
-            onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Industry</InputLabel>
-            <Select
-              value={newCompany.industry}
-              onChange={(e) => setNewCompany({ ...newCompany, industry: e.target.value })}
-            >
-              <MenuItem value="Technology">Technology</MenuItem>
-              <MenuItem value="Healthcare">Healthcare</MenuItem>
-              <MenuItem value="Finance">Finance</MenuItem>
-              <MenuItem value="Education">Education</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={newCompany.status}
-              onChange={(e) => setNewCompany({ ...newCompany, status: e.target.value })}
-            >
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCompanyDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleAddCompany}
-            sx={{
-              backgroundColor: "#28a745",
-              color: "#fff",
-              "&:hover": {
-                backgroundColor: "#218838",
-              },
-            }}
-          >
-            Add Company
+            {currentEntity.id ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

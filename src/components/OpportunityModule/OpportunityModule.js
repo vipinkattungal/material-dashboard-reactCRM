@@ -13,22 +13,20 @@ import {
   DialogTitle,
   MenuItem,
   IconButton,
-  Chip,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEdit,
-  faTrash,
-  faPlus,
-  faFileAlt,
-  faCommentDots,
-} from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS } from "chart.js/auto";
 
 const OpportunityModule = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   // Dummy data
   const initialOpportunities = [
     {
@@ -70,8 +68,6 @@ const OpportunityModule = () => {
     closeDate: "",
     linkedModule: "",
   });
-  const [note, setNote] = useState("");
-  const [file, setFile] = useState(null);
 
   const stages = ["Qualification", "Proposal", "Negotiation", "Closed-Won", "Closed-Lost"];
   const modules = ["Leads", "Contacts", "Accounts"];
@@ -108,24 +104,6 @@ const OpportunityModule = () => {
 
   const handleDelete = (id) => {
     setOpportunities(opportunities.filter((op) => op.id !== id));
-  };
-
-  const handleAddNote = (id) => {
-    if (note.trim()) {
-      setOpportunities(
-        opportunities.map((op) => (op.id === id ? { ...op, notes: [...op.notes, note] } : op))
-      );
-      setNote("");
-    }
-  };
-
-  const handleAddFile = (id) => {
-    if (file) {
-      setOpportunities(
-        opportunities.map((op) => (op.id === id ? { ...op, files: [...op.files, file.name] } : op))
-      );
-      setFile(null);
-    }
   };
 
   // Data for Chart
@@ -167,56 +145,71 @@ const OpportunityModule = () => {
   ];
 
   return (
-    <Box sx={{ padding: 4, backgroundColor: "#f5f5f5", minHeight: "100vh", marginLeft: "280px" }}>
+    <Box
+      sx={{
+        padding: isMobile ? 2 : 4,
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+        marginLeft: { md: "280px" }, // 👈 Applies 280px margin on laptop/desktop
+        transition: "margin-left 0.3s ease-in-out", // Optional smooth transition
+      }}
+    >
+      {" "}
       {/* Header */}
-      <Typography variant="h4" sx={{ mb: 3, color: "#1976d2" }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 3, color: "#1976d2", fontSize: isMobile ? "1.5rem" : "2rem" }}
+      >
         Opportunity Module
       </Typography>
-
       {/* Action Buttons */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Button
             variant="contained"
             startIcon={<FontAwesomeIcon icon={faPlus} />}
             onClick={() => handleDialogOpen()}
-            sx={{ backgroundColor: "#28a745", color: "#fff" }}
+            sx={{ backgroundColor: "#28a745", color: "#fff", width: isMobile ? "100%" : "auto" }}
           >
             Add Opportunity
           </Button>
         </Grid>
       </Grid>
-
       {/* Opportunity List */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, color: "#6c757d" }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, color: "#6c757d", fontSize: isMobile ? "1.25rem" : "1.5rem" }}
+          >
             Opportunity List
           </Typography>
-          <Box style={{ height: 400 }}>
+          <Box sx={{ height: 400, width: "100%" }}>
             <DataGrid
               rows={opportunities}
               columns={columns}
               pageSize={5}
               rowsPerPageOptions={[5]}
               disableSelectionOnClick
+              autoHeight={isMobile}
             />
           </Box>
         </CardContent>
       </Card>
-
       {/* Reports and Analytics */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, color: "#6c757d" }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, color: "#6c757d", fontSize: isMobile ? "1.25rem" : "1.5rem" }}
+          >
             Reports and Analytics
           </Typography>
           <Bar data={chartData} />
         </CardContent>
       </Card>
-
       {/* Dialog for Add/Edit */}
-      <Dialog open={openDialog} onClose={handleDialogClose}>
+      <Dialog open={openDialog} onClose={handleDialogClose} fullScreen={isMobile}>
         <DialogTitle>{currentOpportunity ? "Edit Opportunity" : "Add Opportunity"}</DialogTitle>
         <DialogContent>
           <TextField
