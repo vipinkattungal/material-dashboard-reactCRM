@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,6 +25,8 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import { AddCircleOutline, Edit, Delete, CheckCircle, Cancel, Search } from "@mui/icons-material";
 import PropTypes from "prop-types";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 // StatusChip Component
 const StatusChip = ({ status }) => (
@@ -61,25 +63,7 @@ ActivityBadge.propTypes = {
 
 // Main Component
 const AccountManagementModule = () => {
-  const [accounts, setAccounts] = useState([
-    {
-      id: 1,
-      name: "Acme Corp",
-      industry: "Software",
-      size: "Large",
-      status: "Active",
-      activity: "High",
-    },
-    {
-      id: 2,
-      name: "Beta Ltd",
-      industry: "Healthcare",
-      size: "Medium",
-      status: "Inactive",
-      activity: "Low",
-    },
-  ]);
-
+  const [accounts, setAccounts] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [newAccount, setNewAccount] = useState({
@@ -90,34 +74,92 @@ const AccountManagementModule = () => {
     activity: "High",
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const handleAddAccount = () => {
-    if (editMode) {
-      setAccounts(accounts.map((acc) => (acc.id === newAccount.id ? newAccount : acc)));
-    } else {
-      setAccounts([...accounts, { id: Date.now(), ...newAccount }]);
+  // Fetch accounts on component mount and search term change
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${API_BASE}/api/accounts?search=${encodeURIComponent(searchTerm)}`
+        );
+        const data = await response.json();
+        setAccounts(data);
+      } catch (err) {
+        console.error("Error fetching accounts:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccounts();
+  }, [searchTerm]);
+
+  const handleAddAccount = async () => {
+    try {
+      const method = editMode ? "PUT" : "POST";
+      const url = editMode
+        ? `${API_BASE}/api/accounts/${newAccount.id}`
+        : `${API_BASE}/api/accounts`;
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAccount),
+      });
+
+      if (!response.ok) throw new Error("Failed to save account");
+
+      setOpenDialog(false);
+      setEditMode(false);
+      setNewAccount({
+        name: "",
+        industry: "",
+        size: "",
+        status: "Active",
+        activity: "High",
+      });
+
+      // Refresh the list
+      const refreshResponse = await fetch(`${API_BASE}/api/accounts?search=${searchTerm}`);
+      const refreshedData = await refreshResponse.json();
+      setAccounts(refreshedData);
+    } catch (err) {
+      console.error("Error saving account:", err);
     }
-    setNewAccount({ name: "", industry: "", size: "", status: "Active", activity: "High" });
-    setOpenDialog(false);
-    setEditMode(false);
   };
 
-  const handleEditAccount = (id) => {
-    const account = accounts.find((account) => account.id === id);
-    setNewAccount(account);
-    setEditMode(true);
-    setOpenDialog(true);
+  const handleEditAccount = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/accounts/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch account");
+
+      const account = await response.json();
+      setNewAccount(account);
+      setEditMode(true);
+      setOpenDialog(true);
+    } catch (err) {
+      console.error("Error fetching account for edit:", err);
+    }
   };
 
-  const handleDeleteAccount = (id) => {
-    setAccounts(accounts.filter((account) => account.id !== id));
-  };
+  const handleDeleteAccount = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/accounts/${id}`, {
+        method: "DELETE",
+      });
 
-  const filteredAccounts = accounts.filter((account) =>
-    account.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      if (!response.ok) throw new Error("Failed to delete account");
+
+      // Optimistic update
+      setAccounts((prev) => prev.filter((account) => account.id !== id));
+    } catch (err) {
+      console.error("Error deleting account:", err);
+    }
+  };
 
   return (
     <Box
@@ -154,7 +196,8 @@ const AccountManagementModule = () => {
             </Button>
           </Box>
           <DataGrid
-            rows={filteredAccounts}
+            rows={accounts}
+            loading={loading}
             columns={[
               { field: "name", headerName: "Account Name", flex: 1, minWidth: 200 },
               { field: "industry", headerName: "Industry", flex: 1, minWidth: 150 },
@@ -203,11 +246,11 @@ const AccountManagementModule = () => {
             sx={{
               border: "none",
               "& .MuiDataGrid-columnHeaders": {
-                bgcolor: "white", // Updated to white
+                bgcolor: "white",
                 borderBottom: `1px solid ${theme.palette.divider}`,
               },
               "& .MuiDataGrid-row": {
-                bgcolor: "white", // Updated to white
+                bgcolor: "white",
                 "&:hover": {
                   bgcolor: theme.palette.action.hover,
                 },

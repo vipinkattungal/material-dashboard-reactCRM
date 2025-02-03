@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -25,44 +25,135 @@ import {
   GridToolbarExport,
 } from "@mui/x-data-grid";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
-import PropTypes from "prop-types"; // Add this at the top
 import { Chip } from "@mui/material";
+import PropTypes from "prop-types"; // 👈 Import PropTypes
+
+import {
+  fetchAccounts,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+  fetchCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+} from "../Account-companies/pages/services/api";
 
 const SalesCRMPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Account Module States
-  const [accounts, setAccounts] = useState([
-    {
-      id: 1,
-      name: "ABC Corp.",
-      contactPerson: "John Doe",
-      email: "johndoe@abccorp.com",
-      phone: "123-456-7890",
-      industry: "Technology",
-      status: "Active",
-    },
-  ]);
-
-  // Company Module States
-  const [companies, setCompanies] = useState([
-    {
-      id: 1,
-      name: "Tech Innovations Ltd.",
-      contactPerson: "Alice Johnson",
-      email: "alice@techinnovations.com",
-      phone: "555-123-4567",
-      industry: "Technology",
-      status: "Active",
-    },
-  ]);
-
+  // State management
+  const [accounts, setAccounts] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [currentEntity, setCurrentEntity] = useState({});
+  const [currentEntity, setCurrentEntity] = useState(0);
   const [dialogType, setDialogType] = useState("");
 
-  // Table Columns Configuration
+  // Fetch initial data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const accountsResponse = await fetchAccounts();
+        const companiesResponse = await fetchCompanies();
+        setAccounts(accountsResponse.data.data.accounts);
+        setCompanies(companiesResponse.data.data.companies);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Handle CRUD operations
+  const handleEdit = (entity, type) => {
+    setCurrentEntity(entity);
+    setDialogType(type);
+    setOpenDialog(true);
+  };
+
+  const handleDelete = async (id, type) => {
+    if (window.confirm(`Are you sure you want to delete this ${type}?`)) {
+      try {
+        if (type === "Account") {
+          await deleteAccount(id);
+          setAccounts(accounts.filter((account) => account.id !== id));
+        } else {
+          await deleteCompany(id);
+          setCompanies(companies.filter((company) => company.id !== id));
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!currentEntity) {
+        console.error("No entity data to save");
+        return;
+      }
+
+      let response;
+      if (dialogType === "Account") {
+        if (currentEntity.id) {
+          response = await updateAccount(currentEntity.id, currentEntity);
+        } else {
+          response = await createAccount(currentEntity);
+          // Generate temporary ID if missing
+          if (!response.data?.id && !response.data?.account?.id) {
+            response.data = {
+              account: {
+                ...currentEntity,
+                id: `temp-${Date.now()}`,
+              },
+            };
+            console.warn("Using temporary ID for account");
+          }
+        }
+        const newAccount = response.data.account || response.data;
+        setAccounts((prev) =>
+          currentEntity.id
+            ? prev.map((a) => (a.id === newAccount.id ? newAccount : a))
+            : [...prev, newAccount]
+        );
+      } else {
+        if (currentEntity.id) {
+          response = await updateCompany(currentEntity.id, currentEntity);
+        } else {
+          response = await createCompany(currentEntity);
+          // Generate temporary ID if missing
+          if (!response.data?.id && !response.data?.company?.id) {
+            response.data = {
+              company: {
+                ...currentEntity,
+                id: `temp-${Date.now()}`,
+              },
+            };
+            console.warn("Using temporary ID for company");
+          }
+        }
+        const newCompany = response.data.company || response.data;
+        setCompanies((prev) =>
+          currentEntity.id
+            ? prev.map((c) => (c.id === newCompany.id ? newCompany : c))
+            : [...prev, newCompany]
+        );
+      }
+
+      setOpenDialog(false);
+    } catch (error) {
+      console.error("Save error details:", {
+        error,
+        responseData: error.response?.data,
+        currentEntity,
+      });
+      alert(`Save failed: ${error.message}`);
+    }
+  };
+
+  // Table columns configuration
   const accountColumns = [
     { field: "name", headerName: "Account Name", flex: 1 },
     { field: "contactPerson", headerName: "Contact Person", flex: 1 },
@@ -151,63 +242,28 @@ const SalesCRMPage = () => {
     },
   ];
 
-  // Custom Toolbar
-  function CustomToolbar({ onAddClick }) {
-    return (
-      <GridToolbarContainer>
-        <Button
-          startIcon={<FaPlus />}
-          onClick={onAddClick}
-          sx={{ color: theme.palette.primary.main }}
-        >
-          Add New
-        </Button>
-        <GridToolbarFilterButton />
-        <GridToolbarExport />
-      </GridToolbarContainer>
-    );
-  }
+  // Custom toolbar component
+
+  const CustomToolbar = ({ onAddClick }) => (
+    <GridToolbarContainer>
+      <Button
+        startIcon={<FaPlus />}
+        onClick={onAddClick}
+        sx={{ color: theme.palette.primary.main }}
+      >
+        Add New
+      </Button>
+      <GridToolbarFilterButton />
+      <GridToolbarExport />
+    </GridToolbarContainer>
+  );
+
+  // Prop type validation 👇
   CustomToolbar.propTypes = {
     onAddClick: PropTypes.func.isRequired,
   };
-
-  // Handlers
-  const handleEdit = (entity, type) => {
-    setCurrentEntity(entity);
-    setDialogType(type);
-    setOpenDialog(true);
-  };
-
-  const handleDelete = (id, type) => {
-    if (window.confirm(`Are you sure you want to delete this ${type}?`)) {
-      if (type === "Account") {
-        setAccounts(accounts.filter((account) => account.id !== id));
-      } else {
-        setCompanies(companies.filter((company) => company.id !== id));
-      }
-    }
-  };
-
-  const handleSave = () => {
-    if (dialogType === "Account") {
-      setAccounts(accounts.map((acc) => (acc.id === currentEntity.id ? currentEntity : acc)));
-    } else {
-      setCompanies(companies.map((comp) => (comp.id === currentEntity.id ? currentEntity : comp)));
-    }
-    setOpenDialog(false);
-  };
-
   return (
-    <Box
-      sx={{
-        p: isMobile ? 1 : 3,
-        marginLeft: { xs: 0, md: "280px" },
-        transition: theme.transitions.create("margin", {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.leavingScreen,
-        }),
-      }}
-    >
+    <Box sx={{ p: isMobile ? 1 : 3, marginLeft: { xs: 0, md: "280px" } }}>
       {/* Accounts Table */}
       <Card sx={{ mb: 3, boxShadow: theme.shadows[3] }}>
         <CardContent>
@@ -226,7 +282,6 @@ const SalesCRMPage = () => {
                     onAddClick={() => {
                       setDialogType("Account");
                       setCurrentEntity({
-                        id: accounts.length + 1,
                         name: "",
                         contactPerson: "",
                         email: "",
@@ -238,12 +293,6 @@ const SalesCRMPage = () => {
                     }}
                   />
                 ),
-              }}
-              sx={{
-                border: "none",
-                "& .MuiDataGrid-cell:hover": {
-                  color: theme.palette.primary.main,
-                },
               }}
             />
           </Box>
@@ -258,6 +307,7 @@ const SalesCRMPage = () => {
           </Typography>
           <Box sx={{ height: 400, width: "100%" }}>
             <DataGrid
+              getRowId={(row) => row.id} // 👈 Add this line
               rows={companies}
               columns={companyColumns}
               pageSize={5}
@@ -268,7 +318,6 @@ const SalesCRMPage = () => {
                     onAddClick={() => {
                       setDialogType("Company");
                       setCurrentEntity({
-                        id: companies.length + 1,
                         name: "",
                         contactPerson: "",
                         email: "",
@@ -281,35 +330,29 @@ const SalesCRMPage = () => {
                   />
                 ),
               }}
-              sx={{
-                border: "none",
-                "& .MuiDataGrid-cell:hover": {
-                  color: theme.palette.primary.main,
-                },
-              }}
             />
           </Box>
         </CardContent>
       </Card>
 
-      {/* Universal Edit/Add Dialog */}
+      {/* Universal Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullScreen={isMobile}>
         <DialogTitle>
-          {currentEntity.id ? `Edit ${dialogType}` : `Add New ${dialogType}`}
+          {currentEntity?.id ? `Edit ${dialogType}` : `Add New ${dialogType}`}
         </DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             margin="normal"
             label={`${dialogType} Name`}
-            value={currentEntity.name || ""}
+            value={currentEntity?.name || ""}
             onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Contact Person"
-            value={currentEntity.contactPerson || ""}
+            value={currentEntity?.contactPerson || ""}
             onChange={(e) => setCurrentEntity({ ...currentEntity, contactPerson: e.target.value })}
           />
           <TextField
@@ -317,20 +360,20 @@ const SalesCRMPage = () => {
             margin="normal"
             label="Email"
             type="email"
-            value={currentEntity.email || ""}
+            value={currentEntity?.email || ""}
             onChange={(e) => setCurrentEntity({ ...currentEntity, email: e.target.value })}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Phone"
-            value={currentEntity.phone || ""}
+            value={currentEntity?.phone || ""}
             onChange={(e) => setCurrentEntity({ ...currentEntity, phone: e.target.value })}
           />
           <FormControl fullWidth margin="normal">
             <InputLabel>Industry</InputLabel>
             <Select
-              value={currentEntity.industry || ""}
+              value={currentEntity?.industry || ""}
               onChange={(e) => setCurrentEntity({ ...currentEntity, industry: e.target.value })}
             >
               <MenuItem value="Technology">Technology</MenuItem>
@@ -342,7 +385,7 @@ const SalesCRMPage = () => {
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
             <Select
-              value={currentEntity.status || "Active"}
+              value={currentEntity?.status || "Active"}
               onChange={(e) => setCurrentEntity({ ...currentEntity, status: e.target.value })}
             >
               <MenuItem value="Active">Active</MenuItem>
@@ -352,18 +395,8 @@ const SalesCRMPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            sx={{
-              backgroundColor: theme.palette.primary.main,
-              color: theme.palette.common.white,
-              "&:hover": {
-                backgroundColor: theme.palette.primary.dark,
-              },
-            }}
-          >
-            {currentEntity.id ? "Update" : "Create"}
+          <Button variant="contained" onClick={handleSave}>
+            {currentEntity?.id ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
